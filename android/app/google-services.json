@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "409467482902",
+    "project_id": "webrtc-lgmk",
+    "storage_bucket": "webrtc-lgmk.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:409467482902:android:14113ed3bc7ef2c18b5637",
+        "android_client_info": {
+          "package_name": "com.webrtc"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmEJjCweY_Z9BAPwrK-Qxkt7Td1PeBh3E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
