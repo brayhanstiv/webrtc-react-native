@@ -51,17 +51,13 @@ const App = () => {
     const offerCandidates = channelDoc.collection('offerCandidates');
     const answerCandidates = channelDoc.collection('answerCandidates');
 
-    //setChannelId(channelDoc.id);
+    setChannelId(channelDoc.id);
 
+    // Get candidate for caller, save to db
     peerConnection.addEventListener( 'icecandidate', async event => {
-      // When you find a null candidate then there are no more candidates.
-      // Gathering of candidates has finished.
       if (event.candidate ) { 
         await offerCandidates.add(event.candidate.toJSON());
       };
-    
-      // Send the event.candidate onto the person you're calling.
-      // Keeping to Trickle ICE Standards, you should send the candidates immediately.
     });
 
     //create offer
@@ -87,8 +83,10 @@ const App = () => {
     // When answered, add candidate to peer connection
     answerCandidates.onSnapshot(snapshot => {
       snapshot.docChanges().forEach(change => {
-        const data = change.doc.data();
-        peerConnection.addIceCandidate(new RTCIceCandidate(data));
+        if(change.type === 'added'){
+          const data = change.doc.data();
+          peerConnection.addIceCandidate(new RTCIceCandidate(data));
+        }
       });
     });
   };
@@ -100,24 +98,17 @@ const App = () => {
     const answerCandidates = channelDoc.collection('answerCandidates');
 
     peerConnection.addEventListener( 'icecandidate', async event => {
-      // When you find a null candidate then there are no more candidates.
-      // Gathering of candidates has finished.
       if (event.candidate ) { 
         await answerCandidates.add(event.candidate.toJSON());
       };
-    
-      // Send the event.candidate onto the person you're calling.
-      // Keeping to Trickle ICE Standards, you should send the candidates immediately.
-    } );
+    });
 
     const channelDocument = await channelDoc.get();
     const channelData = channelDocument.data();
 
     const offerDescription = channelData.offer;
-
     const offerDescriptionRemote = new RTCSessionDescription( offerDescription );
 	  await peerConnection.setRemoteDescription( offerDescriptionRemote );
-
 
     const answerDescription = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answerDescription);
@@ -126,7 +117,6 @@ const App = () => {
       type: answerDescription.type,
       sdp: answerDescription.sdp,
     };
-
 
     await channelDoc.update({answer});
 
@@ -146,26 +136,21 @@ const App = () => {
 		});
 		setLocalStream(local);
 
-		const remote = new MediaStream();
-		setRemoteStream(remote);
+    const remote = new MediaStream();
+    setRemoteStream(remote);
 
     // Add our stream to the peer connection.
     local.getTracks().forEach(track => {
-      peerConnection.addTrack( track, local )
+      peerConnection.addTrack( track, local );
     });
 
     peerConnection.addEventListener( 'track', event => {
       remote.addTrack( event.track, remote );
-    } );
-
+      setRemoteStream(event.streams[0])
+    });
+    
 		setWebcamStarted(true);
 	};
-
-  //hang up
-  const hangUp = () => {
-		setLocalStream(null);
-    setRemoteStream(null);
-  };
 
   useEffect(() => {
     const firebaseConfig = {
@@ -179,6 +164,14 @@ const App = () => {
     };
     firebase.initializeApp(firebaseConfig);
   }, []);
+
+  useEffect(() => {
+    console.log('Local Stream', localStream?.toURL());
+  }, [localStream]);
+
+  useEffect(() => {
+    console.log('Remote Stream', remoteStream?.toURL())
+  }, [remoteStream]);
 
   return (
     <KeyboardAvoidingView style={styles.body} behavior="position">
