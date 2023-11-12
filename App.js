@@ -6,7 +6,7 @@
  * @flow strict-local
  */
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import firebase from '@react-native-firebase/app';
 import firestore from '@react-native-firebase/firestore';
 import {
@@ -34,19 +34,25 @@ const App = () => {
   const [peerConnection, _] = useState(
     new RTCPeerConnection({
       iceServers: [
-        {
+        /* {
           "credential": "turn456",
           "urls": [
             "turn:3.208.30.246:3478",
           ],
           "username": "turnuserlgmk"
+        }, */
+        {
+          urls: [
+            'stun:stun1.l.google.com:19302',
+            // 'stun:stun2.l.google.com:19302'
+          ],
         },
       ],
-    })
+    }),
   );
 
-	// Start call
-	const startCall = async () => {
+  // Start call
+  const startCall = async () => {
     const channelDoc = firestore().collection('channels').doc();
     const offerCandidates = channelDoc.collection('offerCandidates');
     const answerCandidates = channelDoc.collection('answerCandidates');
@@ -54,10 +60,10 @@ const App = () => {
     setChannelId(channelDoc.id);
 
     // Get candidate for caller, save to db
-    peerConnection.addEventListener( 'icecandidate', async event => {
-      if (event.candidate ) { 
+    peerConnection.addEventListener('icecandidate', async event => {
+      if (event.candidate) {
         await offerCandidates.add(event.candidate.toJSON());
-      };
+      }
     });
 
     //create offer
@@ -83,7 +89,7 @@ const App = () => {
     // When answered, add candidate to peer connection
     answerCandidates.onSnapshot(snapshot => {
       snapshot.docChanges().forEach(change => {
-        if(change.type === 'added'){
+        if (change.type === 'added') {
           const data = change.doc.data();
           peerConnection.addIceCandidate(new RTCIceCandidate(data));
         }
@@ -91,24 +97,24 @@ const App = () => {
     });
   };
 
-	// join call
-	const joinCall = async () => {
+  // join call
+  const joinCall = async () => {
     const channelDoc = firestore().collection('channels').doc(channelId);
     const offerCandidates = channelDoc.collection('offerCandidates');
     const answerCandidates = channelDoc.collection('answerCandidates');
 
-    peerConnection.addEventListener( 'icecandidate', async event => {
-      if (event.candidate ) { 
+    peerConnection.addEventListener('icecandidate', async event => {
+      if (event.candidate) {
         await answerCandidates.add(event.candidate.toJSON());
-      };
+      }
     });
 
     const channelDocument = await channelDoc.get();
     const channelData = channelDocument.data();
 
     const offerDescription = channelData.offer;
-    const offerDescriptionRemote = new RTCSessionDescription( offerDescription );
-	  await peerConnection.setRemoteDescription( offerDescriptionRemote );
+    const offerDescriptionRemote = new RTCSessionDescription(offerDescription);
+    await peerConnection.setRemoteDescription(offerDescriptionRemote);
 
     const answerDescription = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answerDescription);
@@ -128,39 +134,40 @@ const App = () => {
     });
   };
 
-	// start web cam
-	const startWebcam = async () => {
-		const local = await mediaDevices.getUserMedia({
-			video: true,
-			audio: true,
-		});
-		setLocalStream(local);
+  // start web cam
+  const startWebcam = async () => {
+    const local = await mediaDevices.getUserMedia({
+      video: true,
+      audio: true,
+    });
+    setLocalStream(local);
 
     const remote = new MediaStream();
     setRemoteStream(remote);
 
     // Add our stream to the peer connection.
     local.getTracks().forEach(track => {
-      peerConnection.addTrack( track, local );
+      peerConnection.addTrack(track, local);
+    });
+    peerConnection.onTrac;
+
+    peerConnection.addEventListener('track', event => {
+      remote.addTrack(event.track, remote);
+      setRemoteStream(event.streams[0]);
     });
 
-    peerConnection.addEventListener( 'track', event => {
-      remote.addTrack( event.track, remote );
-      setRemoteStream(event.streams[0])
-    });
-    
-		setWebcamStarted(true);
-	};
+    setWebcamStarted(true);
+  };
 
   useEffect(() => {
     const firebaseConfig = {
-      apiKey: "AIzaSyD2eeT-2_acai9cM7NYUfpT_bZb1abAZGg",
-      authDomain: "webrtc-lgmk.firebaseapp.com",
-      projectId: "webrtc-lgmk",
-      storageBucket: "webrtc-lgmk.appspot.com",
-      messagingSenderId: "409467482902",
-      appId: "1:409467482902:web:75866c5d4782190b8b5637",
-      measurementId: "G-DE3STEQ401"
+      apiKey: 'AIzaSyD2eeT-2_acai9cM7NYUfpT_bZb1abAZGg',
+      authDomain: 'webrtc-lgmk.firebaseapp.com',
+      projectId: 'webrtc-lgmk',
+      storageBucket: 'webrtc-lgmk.appspot.com',
+      messagingSenderId: '409467482902',
+      appId: '1:409467482902:web:75866c5d4782190b8b5637',
+      measurementId: 'G-DE3STEQ401',
     };
     firebase.initializeApp(firebaseConfig);
   }, []);
@@ -170,7 +177,7 @@ const App = () => {
   }, [localStream]);
 
   useEffect(() => {
-    console.log('Remote Stream', remoteStream?.toURL())
+    console.log('Remote Stream', remoteStream?.toURL());
   }, [remoteStream]);
 
   return (
